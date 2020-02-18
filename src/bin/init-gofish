@@ -8,7 +8,7 @@
 . /etc/rc.d/init.d/functions
 
 pidfile=/var/run/gofish.pid
-pid=`cat $pidfile 2>/dev/null`
+pid=$(cat $pidfile 2>/dev/null)
 
 if test -n "$pid" && kill -0 $pid 2>/dev/null; then
 	dead=no

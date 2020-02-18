@@ -13,7 +13,7 @@
  * for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this project; see the file COPYING.  If not, write to
+ * along with GoFish; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
@@ -44,8 +44,8 @@ int verbose = 0;
 unsigned max_requests = 0;
 unsigned max_length = 0;
 unsigned n_requests = 0;
-int      n_connections = 0; // yes signed, I want to know if it goes -ve
-time_t   started;
+int n_connections = 0; // yes signed, I want to know if it goes -ve
+time_t started;
 
 // Add an extra connection for error replies
 static struct connection *conns;
@@ -69,7 +69,6 @@ void set_writeable(struct connection *conn)
 }
 #endif
 
-
 static uid_t root_uid;
 
 // forward references
@@ -82,11 +81,11 @@ static int gofish_stats(struct connection *conn);
 static void check_old_connections(void);
 static int open_cache(char *fname);
 
-
 // SIGUSR1 is handled in log.c
 static void sighandler(int signum)
 {
-	switch(signum) {
+	switch (signum)
+	{
 	case SIGHUP:
 	case SIGTERM:
 	case SIGINT:
@@ -107,7 +106,6 @@ static void sighandler(int signum)
 	}
 }
 
-
 static void cleanup()
 {
 	struct connection *conn;
@@ -126,9 +124,12 @@ static void cleanup()
      * Close any outstanding connections.
      * Free any cached memory.
      */
-	for(conn = conns, i = 0; i < max_conns; ++i, ++conn) {
-		if(SOCKET(conn) != -1) close_connection(conn, 500);
-		if(conn->cmd) free(conn->cmd);
+	for (conn = conns, i = 0; i < max_conns; ++i, ++conn)
+	{
+		if (SOCKET(conn) != -1)
+			close_connection(conn, 500);
+		if (conn->cmd)
+			free(conn->cmd);
 	}
 
 	free(root_dir);
@@ -146,35 +147,48 @@ static void cleanup()
 	closelog();
 }
 
-
 int main(int argc, char *argv[])
 {
 	char *config = GOPHER_CONFIG;
 	int c, go_daemon = 0;
 	char *prog;
 
-	if((prog = strrchr(argv[0], '/')))
+	if ((prog = strrchr(argv[0], '/')))
 		++prog;
 	else
 		prog = argv[0];
 
-	while((c = getopt(argc, argv, "c:dm:pv")) != -1)
-		switch(c) {
-		case 'c': config = optarg; break;
-		case 'd': go_daemon = 1; break;
-		case 'm': max_conns = strtol(optarg, 0, 0); break;
-		case 'p': process_cache = 1; break;
-		case 'v': ++verbose; break;
+	while ((c = getopt(argc, argv, "c:dm:pv")) != -1)
+		switch (c)
+		{
+		case 'c':
+			config = optarg;
+			break;
+		case 'd':
+			go_daemon = 1;
+			break;
+		case 'm':
+			max_conns = strtol(optarg, 0, 0);
+			break;
+		case 'p':
+			process_cache = 1;
+			break;
+		case 'v':
+			++verbose;
+			break;
 		default:
 			printf("usage: %s [-dpv] [-m max_conns] [-c config]\n", *argv);
 			exit(1);
 		}
 
-	if(read_config(config)) exit(1);
+	if (read_config(config))
+		exit(1);
 
-	if(max_conns == 0) max_conns = 25;
+	if (max_conns == 0)
+		max_conns = 25;
 
-	if(!(conns = calloc(max_conns, sizeof(struct connection)))) {
+	if (!(conns = calloc(max_conns, sizeof(struct connection))))
+	{
 		syslog(LOG_CRIT, "Not enough memory. Try reducing max-connections.");
 		exit(1);
 	}
@@ -183,8 +197,9 @@ int main(int argc, char *argv[])
 
 	http_init();
 
-	if(go_daemon) {
-		if(daemon(0, 0) == -1)
+	if (go_daemon)
+	{
+		if (daemon(0, 0) == -1)
 			syslog(LOG_CRIT, "Could not become daemon-process!");
 		else
 			gofish(prog); // never returns
@@ -196,23 +211,25 @@ int main(int argc, char *argv[])
 }
 
 static void
-setup_privs (void)
+setup_privs(void)
 {
 	root_uid = getuid();
 
-	if(uid == (uid_t)-1 || gid == (uid_t)-1) {
+	if (uid == (uid_t)-1 || gid == (uid_t)-1)
+	{
 		struct passwd *pwd = getpwnam(user);
-		if(!pwd) {
+		if (!pwd)
+		{
 			syslog(LOG_ERR, "No such user: `%s'.", user);
 			closelog();
 			exit(1);
 		}
-		if(uid == (uid_t)-1)
+		if (uid == (uid_t)-1)
 			uid = pwd->pw_uid;
-		if(gid == (uid_t)-1)
+		if (gid == (uid_t)-1)
 			gid = pwd->pw_gid;
 #ifdef HAVE_INITGROUPS
-		initgroups (pwd->pw_name, pwd->pw_gid);
+		initgroups(pwd->pw_name, pwd->pw_gid);
 #endif
 	}
 
@@ -230,7 +247,8 @@ void gofish(char *name)
 	// Create *before* chroot
 	create_pidfile(pidfile);
 
-	if(chdir(root_dir)) {
+	if (chdir(root_dir))
+	{
 		perror(root_dir);
 		exit(1);
 	}
@@ -241,9 +259,10 @@ void gofish(char *name)
 	log_open(logfile);
 
 #ifndef NO_CHROOT
-	if(chroot(root_dir)) {
+	if (chroot(root_dir))
+	{
 #ifdef ALLOW_NON_ROOT
-		if(errno == EPERM)
+		if (errno == EPERM)
 			printf("WARNING: You are not running in a chroot environment!\n");
 		else
 #endif
@@ -254,14 +273,15 @@ void gofish(char *name)
 	}
 #endif
 
-	signal(SIGHUP,  sighandler);
+	signal(SIGHUP, sighandler);
 	signal(SIGTERM, sighandler);
-	signal(SIGINT,  sighandler);
+	signal(SIGINT, sighandler);
 	signal(SIGPIPE, sighandler);
 	signal(SIGCHLD, sighandler);
 
 	// connection socket
-	if((csock = listen_socket(port)) < 0) {
+	if ((csock = listen_socket(port)) < 0)
+	{
 		syslog(LOG_ERR, "Unable to create socket: %m");
 		exit(1);
 	}
@@ -269,7 +289,8 @@ void gofish(char *name)
 	seteuid(uid);
 
 	memset(conns, 0, sizeof(conns));
-	for(i = 0; i < max_conns; ++i) {
+	for (i = 0; i < max_conns; ++i)
+	{
 		conns[i].status = 200;
 		conns[i].conn_n = i;
 	}
@@ -284,7 +305,6 @@ void gofish(char *name)
 #endif
 }
 
-
 #ifdef HAVE_POLL
 void start_polling(int csock)
 {
@@ -292,12 +312,14 @@ void start_polling(int csock)
 	int i, n;
 	int timeout;
 
-	if(!(ufds = calloc(max_conns + 1, sizeof(struct pollfd)))) {
+	if (!(ufds = calloc(max_conns + 1, sizeof(struct pollfd))))
+	{
 		syslog(LOG_CRIT, "Not enough memory. Try reducing max-connections.");
 		exit(1);
 	}
 
-	for(i = 0; i < max_conns; ++i) {
+	for (i = 0; i < max_conns; ++i)
+	{
 		conns[i].ufd = &ufds[i + 1];
 		conns[i].ufd->fd = -1;
 	}
@@ -309,14 +331,18 @@ void start_polling(int csock)
 	ufds[0].events = POLLIN;
 	npoll = 1;
 
-	while(1) {
+	while (1)
+	{
 		timeout = n_connections ? (POLL_TIMEOUT * 1000) : -1;
-		if((n = poll(ufds, npoll, timeout)) < 0) {
-			if(errno == EINTR) {
+		if ((n = poll(ufds, npoll, timeout)) < 0)
+		{
+			if (errno == EINTR)
+			{
 #ifdef CGI
 				reap_children();
 #endif
-			} else
+			}
+			else
 				syslog(LOG_WARNING, "poll: %m");
 			continue;
 		}
@@ -326,36 +352,47 @@ void start_polling(int csock)
 		 * Low overhead, but under high load may leave connections
 		 * around longer.
 		 */
-		if(n == 0) {
+		if (n == 0)
+		{
 			check_old_connections();
 			continue;
 		}
 
-		if(ufds[0].revents) {
+		if (ufds[0].revents)
+		{
 			new_connection(ufds[0].fd);
 			--n;
 		}
 
 		// SAM was n >= 0... why?
-		for(conn = conns, i = 0; n > 0 && i < npoll; ++i, ++conn)
-			if(conn->ufd->revents & POLLIN) {
+		for (conn = conns, i = 0; n > 0 && i < npoll; ++i, ++conn)
+			if (conn->ufd->revents & POLLIN)
+			{
 				read_request(conn);
 				--n;
-			} else if(conn->ufd->revents & POLLOUT) {
+			}
+			else if (conn->ufd->revents & POLLOUT)
+			{
 				write_request(conn);
 				--n;
 			}
-			else if(conn->ufd->revents) {
+			else if (conn->ufd->revents)
+			{
 				// Error
 				int status;
 
-				if(conn->ufd->revents & POLLHUP) {
+				if (conn->ufd->revents & POLLHUP)
+				{
 					syslog(LOG_DEBUG, "Connection hung up");
 					status = 504;
-				} else if(conn->ufd->revents & POLLNVAL) {
+				}
+				else if (conn->ufd->revents & POLLNVAL)
+				{
 					syslog(LOG_DEBUG, "Connection invalid");
 					status = 410;
-				} else {
+				}
+				else
+				{
 					syslog(LOG_DEBUG, "Revents = 0x%x", conn->ufd->revents);
 					status = 501;
 				}
@@ -364,7 +401,8 @@ void start_polling(int csock)
 				--n;
 			}
 
-		if(n > 0) syslog(LOG_DEBUG, "Not all requests processed");
+		if (n > 0)
+			syslog(LOG_DEBUG, "Not all requests processed");
 	}
 }
 
@@ -373,13 +411,12 @@ static inline struct connection *find_conn(fd)
 {
 	int i;
 
-	for(i = 0; i < max_conns; ++i)
-		if(conns[i].sock == fd)
+	for (i = 0; i < max_conns; ++i)
+		if (conns[i].sock == fd)
 			return &conns[i];
 
 	return NULL;
 }
-
 
 void start_selecting(int csock)
 {
@@ -388,7 +425,8 @@ void start_selecting(int csock)
 	fd_set cur_reads, cur_writes;
 	struct timeval *timeout, timeoutval;
 
-	for(n = 0; n < max_conns; ++n) conns[n].sock = -1;
+	for (n = 0; n < max_conns; ++n)
+		conns[n].sock = -1;
 
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
@@ -400,20 +438,23 @@ void start_selecting(int csock)
 
 	atexit(cleanup);
 
-
-	while(1) {
-		memcpy(&cur_reads,  &readfds, sizeof(fd_set));
+	while (1)
+	{
+		memcpy(&cur_reads, &readfds, sizeof(fd_set));
 		memcpy(&cur_writes, &writefds, sizeof(fd_set));
 
-		if(n_connections) {
+		if (n_connections)
+		{
 			// We must reset the timeout every time!
-			timeoutval.tv_sec  = POLL_TIMEOUT;
+			timeoutval.tv_sec = POLL_TIMEOUT;
 			timeoutval.tv_usec = 0;
 			timeout = &timeoutval;
-		} else
+		}
+		else
 			timeout = NULL;
-		if((n = select(nfds, &cur_reads, &cur_writes, NULL, timeout)) < 0) {
-			if(errno != EINTR)
+		if ((n = select(nfds, &cur_reads, &cur_writes, NULL, timeout)) < 0)
+		{
+			if (errno != EINTR)
 				syslog(LOG_WARNING, "select: %m");
 			continue;
 		}
@@ -423,34 +464,41 @@ void start_selecting(int csock)
 		 * Low overhead, but under high load may leave connections
 		 * around longer.
 		 */
-		if(n == 0) {
+		if (n == 0)
+		{
 			check_old_connections();
 			continue;
 		}
 
-		if(FD_ISSET(csock, &cur_reads)) {
+		if (FD_ISSET(csock, &cur_reads))
+		{
 			--n;
 			FD_CLR(csock, &cur_reads);
 			new_connection(csock);
 		}
 
-		for(fd = 0; n > 0 && fd < nfds; ++fd) {
-			if(FD_ISSET(fd, &cur_reads)) {
+		for (fd = 0; n > 0 && fd < nfds; ++fd)
+		{
+			if (FD_ISSET(fd, &cur_reads))
+			{
 				--n;
-				if((conn = find_conn(fd)))
+				if ((conn = find_conn(fd)))
 					read_request(conn);
 				else
 					syslog(LOG_DEBUG, "No connection found for read fd");
-			} else if(FD_ISSET(fd, &cur_writes)) {
+			}
+			else if (FD_ISSET(fd, &cur_writes))
+			{
 				--n;
-				if((conn = find_conn(fd)))
+				if ((conn = find_conn(fd)))
 					write_request(conn);
 				else
 					syslog(LOG_DEBUG, "No connection found for write fd");
 			}
 		}
 
-		if(n > 0) syslog(LOG_DEBUG, "Not all requests processed");
+		if (n > 0)
+			syslog(LOG_DEBUG, "Not all requests processed");
 	}
 }
 #endif
@@ -480,7 +528,8 @@ int checkpath(char *path)
 #else
 	// A .. at the end is safe since it will never specify a file,
 	// only a directory.
-	if(strncmp(path, "../", 3) == 0 || (int)strstr(path, "/../")) {
+	if (strncmp(path, "../", 3) == 0 || (int)strstr(path, "/../"))
+	{
 		errno = EACCES;
 		return -1;
 	}
@@ -489,7 +538,6 @@ int checkpath(char *path)
 	return 0;
 }
 #endif
-
 
 // This handles parsing the name and opening the file
 // We allow the following /?<selector>/<path> || nothing
@@ -501,20 +549,24 @@ int smart_open(char *name, char *type)
 	struct stat sbuf;
 	char dirname[MAX_LINE + 10], *p, *e;
 
-	if(*name == '/') ++name;
+	if (*name == '/')
+		++name;
 
 	// This is worth optimizing
-	if(*name == '\0') {
+	if (*name == '\0')
+	{
 		*type = '1';
 		return open_cache(".cache");
 	}
 
 	// Fast path - type specified
-	if(*(name + 1) == '/') {
+	if (*(name + 1) == '/')
+	{
 		*type = *name;
 		name += 2;
 
-		switch(*type) {
+		switch (*type)
+		{
 		case '0':
 		case '4':
 		case '5':
@@ -527,7 +579,8 @@ int smart_open(char *name, char *type)
 		case '1':
 			strcpy(dirname, name);
 			p = dirname + strlen(dirname);
-			if(*(p - 1) != '/') *p++ = '/';
+			if (*(p - 1) != '/')
+				*p++ = '/';
 			strcpy(p, ".cache");
 			return open_cache(dirname);
 		default:
@@ -538,42 +591,50 @@ int smart_open(char *name, char *type)
 
 #ifndef STRICT_GOPHER
 	// Regular path
-	if((fd = open(name, O_RDONLY)) < 0) return -1;
+	if ((fd = open(name, O_RDONLY)) < 0)
+		return -1;
 
-	if(fstat(fd, &sbuf)) {
+	if (fstat(fd, &sbuf))
+	{
 		close(fd);
 		return -1;
 	}
 
 	strcpy(dirname, name);
 
-	if(S_ISDIR(sbuf.st_mode)) {
+	if (S_ISDIR(sbuf.st_mode))
+	{
 		*type = '1';
 		close(fd);
 
 		p = dirname + strlen(dirname);
-		if(*(p - 1) != '/') *p++ = '/';
+		if (*(p - 1) != '/')
+			*p++ = '/';
 		strcpy(p, ".cache");
 		return open_cache(dirname);
 	}
 
-	if((p = strrchr(dirname, '/')))
+	if ((p = strrchr(dirname, '/')))
 		strcpy(p + 1, ".cache");
 	else
 		strcpy(dirname, ".cache");
 
-
-	if((fp = fopen(dirname, "r")) == NULL) {
+	if ((fp = fopen(dirname, "r")) == NULL)
+	{
 		close(fd);
 		return -1;
 	}
 
-	while(fgets(dirname, sizeof(dirname), fp)) {
-		if((p = strchr(dirname, '\t'))) {
+	while (fgets(dirname, sizeof(dirname), fp))
+	{
+		if ((p = strchr(dirname, '\t')))
+		{
 			p += 3;
-			if((e = strchr(p, '\t'))) {
+			if ((e = strchr(p, '\t')))
+			{
 				*e = '\0';
-				if(strcmp(name, p) == 0) {
+				if (strcmp(name, p) == 0)
+				{
 					fclose(fp);
 					*type = *dirname;
 					return fd;
@@ -593,61 +654,70 @@ int smart_open(char *name, char *type)
 	return -1;
 }
 
-
 void close_connection(struct connection *conn, int status)
 {
-	if(verbose > 2) printf("Close request\n");
+	if (verbose > 2)
+		printf("Close request\n");
 
 	--n_connections;
 
-	if(conn->cmd) {
+	if (conn->cmd)
+	{
 		// Make we have a clean cmd
 		char *p;
 
-		for(p = conn->cmd; *p && *p != '\r' && *p != '\n'; ++p) ;
+		for (p = conn->cmd; *p && *p != '\r' && *p != '\n'; ++p)
+			;
 		*p = '\0';
 
-		if(strncmp(conn->cmd, "GET ", 4) == 0 ||
-		   strncmp(conn->cmd, "HEAD ", 5) == 0)
+		if (strncmp(conn->cmd, "GET ", 4) == 0 ||
+			strncmp(conn->cmd, "HEAD ", 5) == 0)
 			conn->http = 1;
 	}
 
 	// Log hits in one place. Do not log stat requests.
-	if(status != 1000) {
+	if (status != 1000)
+	{
 		log_hit(conn, status);
 
 		// Send gopher errors in one place also
-		if(status != 200 && status != 504 && !conn->http) {
+		if (status != 200 && status != 504 && !conn->http)
+		{
 			syslog(LOG_WARNING, "Gopher error %d http %d\n",
 				   status, conn->http);
 			send_error(conn, status);
 		}
 	}
 
-	if(conn->conn_n > MIN_REQUESTS && conn->cmd) {
+	if (conn->conn_n > MIN_REQUESTS && conn->cmd)
+	{
 		free(conn->cmd);
 		conn->cmd = NULL;
 	}
 
 	conn->len = conn->offset = 0;
 
-	if(conn->buf) {
+	if (conn->buf)
+	{
 		mmap_release(conn);
 		conn->buf = NULL;
 	}
 
-	if(SOCKET(conn) >= 0) {
+	if (SOCKET(conn) >= 0)
+	{
 		close(SOCKET(conn));
 #ifdef HAVE_POLL
 		conn->ufd->fd = -1;
 		conn->ufd->revents = 0;
-		while(npoll > 1 && ufds[npoll - 1].fd == -1) --npoll;
+		while (npoll > 1 && ufds[npoll - 1].fd == -1)
+			--npoll;
 #else
 		FD_CLR(conn->sock, &readfds);
 		FD_CLR(conn->sock, &writefds);
-		if(conn->sock >= nfds - 1)
-			for(nfds = conn->sock - 1; nfds > 0; --nfds)
-				if(FD_ISSET(nfds, &readfds) || FD_ISSET(nfds, &writefds)) {
+		if (conn->sock >= nfds - 1)
+			for (nfds = conn->sock - 1; nfds > 0; --nfds)
+				if (FD_ISSET(nfds, &readfds) || FD_ISSET(nfds, &writefds))
+				{
 					nfds++;
 					break;
 				}
@@ -655,17 +725,19 @@ void close_connection(struct connection *conn, int status)
 #endif
 	}
 
-	if(conn->http_header) {
+	if (conn->http_header)
+	{
 		free(conn->http_header);
 		conn->http_header = NULL;
 	}
-	if(conn->outname) {
-		if(unlink(conn->outname))
+	if (conn->outname)
+	{
+		if (unlink(conn->outname))
 			syslog(LOG_WARNING, "unlink %s: %m", conn->outname);
 		free(conn->outname);
 		conn->outname = NULL;
 	}
-	conn->html_header  = NULL;
+	conn->html_header = NULL;
 	conn->html_trailer = NULL;
 
 	conn->http = 0;
@@ -680,14 +752,13 @@ void close_connection(struct connection *conn, int status)
 #ifdef HAVE_POLL
 	ufds[0].events = POLLIN; /* in case we throttled */
 #else
-	FD_SET(accept_sock, &readfds);  /* in case we throttled */
+	FD_SET(accept_sock, &readfds); /* in case we throttled */
 #endif
 
 #ifdef CGI
 	conn->cgi = 0;
 #endif
 }
-
 
 int new_connection(int csock)
 {
@@ -698,15 +769,18 @@ int new_connection(int csock)
 
 	seteuid(root_uid);
 
-	while(1) {
+	while (1)
+	{
 		/*
 		 * Find a free connection. If we do not have a free
 		 * connection, throttle incoming requests and let the backlog
 		 * queue hold it.
 		 */
-		for(conn = conns, i = 0; i < max_conns; ++i, ++conn)
-			if(SOCKET(conn) == -1) break;
-		if(i == max_conns) {
+		for (conn = conns, i = 0; i < max_conns; ++i, ++conn)
+			if (SOCKET(conn) == -1)
+				break;
+		if (i == max_conns)
+		{
 			syslog(LOG_WARNING, "Too many connections.");
 #ifdef HAVE_POLL
 			ufds[0].events = 0;
@@ -716,10 +790,11 @@ int new_connection(int csock)
 			return -1;
 		}
 
-		if((sock = accept_socket(csock, &addr)) < 0) {
+		if ((sock = accept_socket(csock, &addr)) < 0)
+		{
 			seteuid(uid);
 
-			if(errno == EWOULDBLOCK)
+			if (errno == EWOULDBLOCK)
 				return 0;
 
 			syslog(LOG_WARNING, "Accept connection: %m");
@@ -730,20 +805,21 @@ int new_connection(int csock)
 		set_readable(conn, sock);
 		++n_connections;
 		++n_requests;
-		if(i > max_requests) max_requests = i;
+		if (i > max_requests)
+			max_requests = i;
 
-		conn->addr   = addr;
+		conn->addr = addr;
 		conn->offset = 0;
-		conn->len    = 0;
+		conn->len = 0;
 		time(&conn->access);
 
-		if(!conn->cmd && !(conn->cmd = malloc(MAX_LINE + 1))) {
+		if (!conn->cmd && !(conn->cmd = malloc(MAX_LINE + 1)))
+		{
 			syslog(LOG_WARNING, "Out of memory.");
 			close_connection(conn, 503);
 		}
 	}
 }
-
 
 int read_request(struct connection *conn)
 {
@@ -753,10 +829,12 @@ int read_request(struct connection *conn)
 
 	do
 		n = read(SOCKET(conn), conn->cmd + conn->offset, MAX_LINE - conn->offset);
-	while(n < 0 && errno == EINTR);
+	while (n < 0 && errno == EINTR);
 
-	if(n < 0) {
-		if(errno == EAGAIN) {
+	if (n < 0)
+	{
+		if (errno == EAGAIN)
+		{
 			syslog(LOG_DEBUG, "EAGAIN\n");
 			return 0;
 		}
@@ -765,7 +843,8 @@ int read_request(struct connection *conn)
 		close_connection(conn, 408);
 		return 1;
 	}
-	if(n == 0) {
+	if (n == 0)
+	{
 		syslog(LOG_WARNING, "Read: unexpected EOF");
 		close_connection(conn, 408);
 		return 1;
@@ -777,13 +856,16 @@ int read_request(struct connection *conn)
 	// We alloced an extra space for the '\0'
 	conn->cmd[conn->offset] = '\0';
 
-	if(conn->cmd[conn->offset - 1] != '\n') {
-		if(conn->offset >= MAX_LINE) {
+	if (conn->cmd[conn->offset - 1] != '\n')
+	{
+		if (conn->offset >= MAX_LINE)
+		{
 			syslog(LOG_WARNING, "Line overflow");
-			if(strncmp(conn->cmd, "GET ",  4) == 0 ||
-			   strncmp(conn->cmd, "HEAD ", 5) == 0)
+			if (strncmp(conn->cmd, "GET ", 4) == 0 ||
+				strncmp(conn->cmd, "HEAD ", 5) == 0)
 				return http_error(conn, 414);
-			else {
+			else
+			{
 				close_connection(conn, 414);
 				return 1;
 			}
@@ -791,17 +873,21 @@ int read_request(struct connection *conn)
 		return 0; // not an error
 	}
 
-	if(conn->offset > max_length) max_length = conn->offset;
+	if (conn->offset > max_length)
+		max_length = conn->offset;
 
-	if(strcmp(conn->cmd, "STATS\r\n") == 0)
+	if (strcmp(conn->cmd, "STATS\r\n") == 0)
 		return gofish_stats(conn);
 
-	if(strncmp(conn->cmd, "GET ",  4) == 0 ||
-	   strncmp(conn->cmd, "HEAD ", 5) == 0) {
+	if (strncmp(conn->cmd, "GET ", 4) == 0 ||
+		strncmp(conn->cmd, "HEAD ", 5) == 0)
+	{
 		// We must look for \r\n\r\n
 		// This is mainly for telnet sessions
-		if(strstr(conn->cmd, "\r\n\r\n")) {
-			if(verbose > 2) printf("Http: %s\n", conn->cmd);
+		if (strstr(conn->cmd, "\r\n\r\n"))
+		{
+			if (verbose > 2)
+				printf("Http: %s\n", conn->cmd);
 			return http_get(conn);
 		}
 		conn->http = 1;
@@ -812,30 +898,36 @@ int read_request(struct connection *conn)
 	// From here on is gopher only
 
 	conn->cmd[conn->offset - 1] = '\0';
-	if(conn->offset > 1 && conn->cmd[conn->offset - 2] == '\r')
+	if (conn->offset > 1 && conn->cmd[conn->offset - 2] == '\r')
 		conn->cmd[conn->offset - 2] = '\0';
 
-	if(verbose) printf("Gopher request: '%s'\n", conn->cmd);
+	if (verbose)
+		printf("Gopher request: '%s'\n", conn->cmd);
 
 	// For gopher+ clients - ignore tab and everything after it
-	if((p = strchr(conn->cmd, '\t'))) {
-		if(verbose) printf("  Gopher+\n");
-		if(strcmp(conn->cmd, "\t$") == 0)
+	if ((p = strchr(conn->cmd, '\t')))
+	{
+		if (verbose)
+			printf("  Gopher+\n");
+		if (strcmp(conn->cmd, "\t$") == 0)
 			// UMN client - got this idea from floodgap.com
 			strcpy(conn->cmd, "0/.gopher+");
 		else
 			*p = '\0';
 	}
 
-	if((fd = smart_open(conn->cmd, &type)) < 0) {
+	if ((fd = smart_open(conn->cmd, &type)) < 0)
+	{
 		close_connection(conn, 404);
 		return 1;
 	}
 
 	conn->len = lseek(fd, 0, SEEK_END);
 
-	if(conn->len) {
-		if((conn->buf = mmap_get(conn, fd)) == NULL) {
+	if (conn->len)
+	{
+		if ((conn->buf = mmap_get(conn, fd)) == NULL)
+		{
 			syslog(LOG_ERR, "mmap: %m");
 			close(fd);
 			close_connection(conn, 408);
@@ -846,15 +938,19 @@ int read_request(struct connection *conn)
 	close(fd);
 
 	conn->iovs[0].iov_base = conn->buf;
-	conn->iovs[0].iov_len  = conn->len;
+	conn->iovs[0].iov_len = conn->len;
 
-	if(type == '0') {
-		if(conn->len > 0 && conn->buf[conn->len - 1] != '\n') {
+	if (type == '0')
+	{
+		if (conn->len > 0 && conn->buf[conn->len - 1] != '\n')
+		{
 			conn->iovs[1].iov_base = "\r\n.\r\n";
-			conn->iovs[1].iov_len  = 5;
-		} else {
+			conn->iovs[1].iov_len = 5;
+		}
+		else
+		{
 			conn->iovs[1].iov_base = ".\r\n";
-			conn->iovs[1].iov_len  = 3;
+			conn->iovs[1].iov_len = 3;
 		}
 		conn->len += conn->iovs[1].iov_len;
 		conn->n_iovs = 2;
@@ -867,7 +963,6 @@ int read_request(struct connection *conn)
 	return 0;
 }
 
-
 int write_request(struct connection *conn)
 {
 	int n, i;
@@ -875,27 +970,32 @@ int write_request(struct connection *conn)
 
 	do
 		n = writev(SOCKET(conn), conn->iovs, conn->n_iovs);
-	while(n < 0 && errno == EINTR);
+	while (n < 0 && errno == EINTR);
 
-	if(n < 0) {
-		if(errno == EAGAIN) return 0;
+	if (n < 0)
+	{
+		if (errno == EAGAIN)
+			return 0;
 
 		syslog(LOG_ERR, "writev: %m");
 		close_connection(conn, 408);
 		return 1;
 	}
-	if(n == 0) {
+	if (n == 0)
+	{
 		syslog(LOG_ERR, "writev unexpected EOF");
 		close_connection(conn, 408);
 		return 1;
 	}
 
-	for(iov = conn->iovs, i = 0; i < conn->n_iovs; ++i, ++iov)
-		if(n >= iov->iov_len) {
+	for (iov = conn->iovs, i = 0; i < conn->n_iovs; ++i, ++iov)
+		if (n >= iov->iov_len)
+		{
 			n -= iov->iov_len;
 			iov->iov_len = 0;
 		}
-		else {
+		else
+		{
 			iov->iov_len -= n;
 			iov->iov_base += n;
 			time(&conn->access);
@@ -907,7 +1007,6 @@ int write_request(struct connection *conn)
 	return 0;
 }
 
-
 void check_old_connections(void)
 {
 	struct connection *c;
@@ -917,8 +1016,9 @@ void check_old_connections(void)
 	checkpoint = time(NULL) - MAX_IDLE_TIME;
 
 	// Do not close the listen socket
-	for(c = conns, i = 0; i < max_conns; ++i, ++c)
-		if(SOCKET(c) >= 0 && c->access < checkpoint) {
+	for (c = conns, i = 0; i < max_conns; ++i, ++c)
+		if (SOCKET(c) >= 0 && c->access < checkpoint)
+		{
 			// SAM What about http connections?
 			syslog(LOG_WARNING, "%s: Killing idle connection.", ntoa(c->addr));
 			syslog(LOG_DEBUG, "%s idle: '%s'", ntoa(c->addr), c->cmd); // SAM DBG
@@ -926,32 +1026,39 @@ void check_old_connections(void)
 		}
 }
 
-
 void create_pidfile(char *fname)
 {
 	FILE *fp;
 	int n;
 	int pid;
 
-	if((fp = fopen(fname, "r"))) {
+	if ((fp = fopen(fname, "r")))
+	{
 		n = fscanf(fp, "%d\n", &pid);
 		fclose(fp);
 
-		if(n == 1) {
-			if(kill(pid, 0) == 0) {
+		if (n == 1)
+		{
+			if (kill(pid, 0) == 0)
+			{
 				syslog(LOG_ERR, "gopherd already running (pid = %d)", pid);
 				exit(1);
 			}
-		} else {
+		}
+		else
+		{
 			syslog(LOG_ERR, "Unable to read %s", fname);
 			exit(1);
 		}
-	} else if(errno != ENOENT) {
+	}
+	else if (errno != ENOENT)
+	{
 		syslog(LOG_ERR, "Open %s: %m", fname);
 		exit(1);
 	}
 
-	if((fp = fopen(fname, "w")) == NULL) {
+	if ((fp = fopen(fname, "w")) == NULL)
+	{
 		syslog(LOG_ERR, "Create %s: %m", fname);
 		exit(1);
 	}
@@ -962,7 +1069,6 @@ void create_pidfile(char *fname)
 	fclose(fp);
 }
 
-
 /* SAM This could be optimized */
 int open_cache(char *fname)
 {
@@ -971,29 +1077,37 @@ int open_cache(char *fname)
 	char tempname[20], portstr[12];
 	char line[1024];
 
-	if(process_cache == 0) return open(fname, O_RDONLY);
+	if (process_cache == 0)
+		return open(fname, O_RDONLY);
 
-	if((fp = fopen(fname, "r")) == NULL) return -1;
+	if ((fp = fopen(fname, "r")) == NULL)
+		return -1;
 
 	sprintf(tempname, "%s/gocacheXXXXXX", tmpdir);
-	if((fd = mkstemp(tempname)) < 0) {
+	if ((fd = mkstemp(tempname)) < 0)
+	{
 		fclose(fp);
 		return fd;
 	}
 	unlink(tempname);
 
-	while(fgets(line, sizeof(line), fp)) {
-#define NEED_WRITE(fd, b, l)  if((rc = write(fd, b, l)) != l) goto write_failed
+	while (fgets(line, sizeof(line), fp))
+	{
+#define NEED_WRITE(fd, b, l)         \
+	if ((rc = write(fd, b, l)) != l) \
+	goto write_failed
 		int len, fields = 1;
 		char *p;
 
-		for(p = line; *p && *p != '\n' && *p != '\r'; ++p)
-			if(*p == '\t') ++fields;
+		for (p = line; *p && *p != '\n' && *p != '\r'; ++p)
+			if (*p == '\t')
+				++fields;
 
 		len = p - line;
 		NEED_WRITE(fd, line, len);
 
-		switch(fields) {
+		switch (fields)
+		{
 		case 2: /* host missing */
 			NEED_WRITE(fd, "\t", 1);
 			NEED_WRITE(fd, hostname, strlen(hostname));
@@ -1012,7 +1126,7 @@ int open_cache(char *fname)
 	return fd;
 
 write_failed:
-	if(rc < 0)
+	if (rc < 0)
 		syslog(LOG_WARNING, "open_cache %s: write failed: %m", fname);
 	else
 		syslog(LOG_WARNING, "open_cache %s: short write", fname);
@@ -1021,20 +1135,21 @@ write_failed:
 	return -1;
 }
 
-
-#define SECONDS_IN_A_MINUTE	(60)
-#define SECONDS_IN_AN_HOUR	(SECONDS_IN_A_MINUTE * 60)
-#define SECONDS_IN_A_DAY	(SECONDS_IN_AN_HOUR * 24)
+#define SECONDS_IN_A_MINUTE (60)
+#define SECONDS_IN_AN_HOUR (SECONDS_IN_A_MINUTE * 60)
+#define SECONDS_IN_A_DAY (SECONDS_IN_AN_HOUR * 24)
 
 static char *uptime(char *str)
 {
 	time_t up = time(NULL) - started;
 
-	if(up >= SECONDS_IN_A_DAY) {
+	if (up >= SECONDS_IN_A_DAY)
+	{
 		up /= SECONDS_IN_A_DAY;
 		sprintf(str, "%ld %s", up, up == 1 ? "day" : "days");
 	}
-	else if(up >= SECONDS_IN_AN_HOUR) {
+	else if (up >= SECONDS_IN_AN_HOUR)
+	{
 		up /= SECONDS_IN_AN_HOUR;
 		sprintf(str, "%ld %s", up, up == 1 ? "hour" : "hours");
 	}
@@ -1043,7 +1158,6 @@ static char *uptime(char *str)
 
 	return str;
 }
-
 
 static int gofish_stats(struct connection *conn)
 {
@@ -1061,19 +1175,20 @@ static int gofish_stats(struct connection *conn)
 			// we are an outstanding connection
 			n_connections - 1);
 
-	if(bad_munmaps) {
+	if (bad_munmaps)
+	{
 		char *p = buf + strlen(buf);
 		sprintf(p, "BAD UNMAPS:   %10u\r\n", bad_munmaps);
 	}
 
 	// SAM safe? It's < 150 bytes...
-	while(write(SOCKET(conn), buf, strlen(buf)) < 0 && errno == EINTR) ;
+	while (write(SOCKET(conn), buf, strlen(buf)) < 0 && errno == EINTR)
+		;
 
 	close_connection(conn, 1000);
 
 	return 0;
 }
-
 
 #ifndef HAVE_DAEMON
 // Minimal daemon call for solaris
@@ -1081,14 +1196,15 @@ int daemon(int nochdir, int noclose)
 {
 	pid_t pid;
 
-	if((pid = fork()) == 0) return 0;
+	if ((pid = fork()) == 0)
+		return 0;
 
-	if(pid == -1) return -1;
+	if (pid == -1)
+		return -1;
 
 	exit(0); // parent exits
 }
 #endif
-
 
 #ifdef CGI
 void reap_children()
@@ -1096,17 +1212,23 @@ void reap_children()
 	struct connection *conn;
 	int i;
 
-	for(conn = conns, i = 0; i < max_conns; ++i, ++conn)
-		if(conn->cgi) {
+	for (conn = conns, i = 0; i < max_conns; ++i, ++conn)
+		if (conn->cgi)
+		{
 			int rc, status;
 
-			if((rc = waitpid(conn->cgi, &status, WNOHANG)) == conn->cgi) {
+			if ((rc = waitpid(conn->cgi, &status, WNOHANG)) == conn->cgi)
+			{
 				// done
 				// SAM SAM SAM FIX check status
 				close_connection(conn, 200);
-			} else if(rc == 0) {
+			}
+			else if (rc == 0)
+			{
 				printf("waitpid had nothing for us....\n"); // SAM
-			} else {
+			}
+			else
+			{
 				perror("waitpid");
 				close_connection(conn, 500);
 			}

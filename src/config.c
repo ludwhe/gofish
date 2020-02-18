@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this project; see the file COPYING.  If not, write to
+ * along with GoFish; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
@@ -31,65 +31,61 @@
 
 #include "gofish.h"
 
-
 char *root_dir = NULL;
-char *logfile  = NULL;
-char *pidfile  = NULL;
+char *logfile = NULL;
+char *pidfile = NULL;
 char *hostname = NULL;
-char *tmpdir   = NULL;
+char *tmpdir = NULL;
 
-int   port = GOPHER_PORT;
+int port = GOPHER_PORT;
 char *user = GOPHER_USER;
-uid_t uid  = GOPHER_UID;
-gid_t gid  = GOPHER_GID;
-int   ignore_local  = IGNORE_LOCAL;
-int   icon_width    = ICON_WIDTH;
-int   icon_height   = ICON_HEIGHT;
-int   virtual_hosts = 0;
-int   combined_log  = 0;
-int   is_gopher     = 1;
-int   htmlizer      = 1;
-int   max_conns     = 25;
-int   process_cache = 0;
-
+uid_t uid = GOPHER_UID;
+gid_t gid = GOPHER_GID;
+int ignore_local = IGNORE_LOCAL;
+int icon_width = ICON_WIDTH;
+int icon_height = ICON_HEIGHT;
+int virtual_hosts = 0;
+int combined_log = 0;
+int is_gopher = 1;
+int htmlizer = 1;
+int max_conns = 25;
+int process_cache = 0;
 
 extern void set_mime_file(char *fname);
-
 
 // If we are already out of memory, we are in real trouble
 char *must_strdup(char *str)
 {
 	char *new = strdup(str);
-	if(!new) {
+	if (!new)
+	{
 		syslog(LOG_ERR, "read_config: out of memory");
 		exit(1);
 	}
 	return new;
 }
 
-
 // only set if a number specified
 void must_strtol(char *str, int *value)
 {
 	char *end;
 	long n = strtol(str, &end, 0);
-	if(str != end)
+	if (str != end)
 		*value = (int)n;
 }
-
 
 char *must_alloc(int size)
 {
 	char *mem;
 
-	if((mem = calloc(size, 1)) == NULL) {
+	if ((mem = calloc(size, 1)) == NULL)
+	{
 		syslog(LOG_ERR, "Out of memory.");
 		exit(1);
 	}
 
 	return mem;
 }
-
 
 int read_config(char *fname)
 {
@@ -99,90 +95,124 @@ int read_config(char *fname)
 	// These values must be malloced
 	user = must_strdup(user);
 
-	if((fp = fopen(fname, "r"))) {
-		while(fgets(line, sizeof(line), fp)) {
-			if(!isalpha((int)*line)) continue;
+	if ((fp = fopen(fname, "r")))
+	{
+		while (fgets(line, sizeof(line), fp))
+		{
+			if (!isalpha((int)*line))
+				continue;
 
-			for(p = line + strlen(line); isspace((int)*(p - 1)); --p) ;
+			for (p = line + strlen(line); isspace((int)*(p - 1)); --p)
+				;
 			*p = '\0';
 
-			if((p = strchr(line, '=')) == NULL) {
+			if ((p = strchr(line, '=')) == NULL)
+			{
 				printf("Bad line '%s'\n", line);
 				continue;
 			}
 			s = p++;
 
-			while(isspace((int)*(s - 1))) --s;
+			while (isspace((int)*(s - 1)))
+				--s;
 			*s++ = '\0';
 
-			while(isspace((int)*p)) ++p;
-			if(*p == '\0') {
+			while (isspace((int)*p))
+				++p;
+			if (*p == '\0')
+			{
 				printf("No value for '%s'\n", line);
 				continue;
 			}
 
 			// Convert _ to -
-			for(s = line; (s = strchr(s, '_')); ++s) *s = '-';
+			for (s = line; (s = strchr(s, '_')); ++s)
+				*s = '-';
 
-			if(strcmp(line, "root") == 0) {
-				if(root_dir) free(root_dir);
+			if (strcmp(line, "root") == 0)
+			{
+				if (root_dir)
+					free(root_dir);
 				root_dir = must_strdup(p);
-			} else if(strcmp(line, "logfile") == 0) {
-				if(logfile) free(logfile);
+			}
+			else if (strcmp(line, "logfile") == 0)
+			{
+				if (logfile)
+					free(logfile);
 				logfile = must_strdup(p);
-			} else if(strcmp(line, "pidfile") == 0) {
-				if(pidfile) free(pidfile);
+			}
+			else if (strcmp(line, "pidfile") == 0)
+			{
+				if (pidfile)
+					free(pidfile);
 				pidfile = must_strdup(p);
-			} else if(strcmp(line, "tmpdir") == 0) {
-				if(tmpdir) free(tmpdir);
+			}
+			else if (strcmp(line, "tmpdir") == 0)
+			{
+				if (tmpdir)
+					free(tmpdir);
 				tmpdir = must_strdup(p);
-			} else if(strcmp(line, "port") == 0)
+			}
+			else if (strcmp(line, "port") == 0)
 				must_strtol(p, &port);
-			else if(strcmp(line, "listen-address") == 0)
+			else if (strcmp(line, "listen-address") == 0)
 				set_listen_address(p);
-			else if(strcmp(line, "user") == 0) {
-				if(user) free(user);
+			else if (strcmp(line, "user") == 0)
+			{
+				if (user)
+					free(user);
 				user = must_strdup(p);
-			} else if(strcmp(line, "uid") == 0)
-				must_strtol(p, (int*)&uid);
-			else if(strcmp(line, "gid") == 0)
-				must_strtol(p, (int*)&gid);
-			else if(strcmp(line, "no-local") == 0)
+			}
+			else if (strcmp(line, "uid") == 0)
+				must_strtol(p, (int *)&uid);
+			else if (strcmp(line, "gid") == 0)
+				must_strtol(p, (int *)&gid);
+			else if (strcmp(line, "no-local") == 0)
 				must_strtol(p, &ignore_local);
-			else if(strcmp(line, "locals") == 0) {
+			else if (strcmp(line, "locals") == 0)
+			{
 				must_strtol(p, &ignore_local);
 				ignore_local = !ignore_local;
-			} else if(strcmp(line, "host") == 0) {
-				if(hostname) free(hostname);
+			}
+			else if (strcmp(line, "host") == 0)
+			{
+				if (hostname)
+					free(hostname);
 				hostname = must_strdup(p);
-			} else if(strcmp(line, "icon-width") == 0)
+			}
+			else if (strcmp(line, "icon-width") == 0)
 				must_strtol(p, &icon_width);
-			else if(strcmp(line, "icon-height") == 0)
+			else if (strcmp(line, "icon-height") == 0)
 				must_strtol(p, &icon_height);
-			else if(strcmp(line, "mimefile") == 0)
+			else if (strcmp(line, "mimefile") == 0)
 				set_mime_file(p);
-			else if(strcmp(line, "virtual-hosts") == 0)
+			else if (strcmp(line, "virtual-hosts") == 0)
 				must_strtol(p, &virtual_hosts);
-			else if(strcmp(line, "combined-log") == 0)
+			else if (strcmp(line, "combined-log") == 0)
 				must_strtol(p, &combined_log);
-			else if(strcmp(line, "is-http") == 0) {
+			else if (strcmp(line, "is-http") == 0)
+			{
 				int is_http = -1;
 				must_strtol(p, &is_http);
-				if(is_http != -1) is_gopher = !is_http;
-			} else if(strcmp(line, "mmap-cache-size") == 0) {
+				if (is_http != -1)
+					is_gopher = !is_http;
+			}
+			else if (strcmp(line, "mmap-cache-size") == 0)
+			{
 #ifdef MMAP_CACHE
 				extern int mmap_cache_size;
 				must_strtol(p, &mmap_cache_size);
 #endif
-			} else if(strcmp(line, "htmlize") == 0)
+			}
+			else if (strcmp(line, "htmlize") == 0)
 				must_strtol(p, &htmlizer);
-			else if(strcmp(line, "max-connections") == 0)
+			else if (strcmp(line, "max-connections") == 0)
 				must_strtol(p, &max_conns);
-			else if(strcmp(line, "html-header-file") == 0)
+			else if (strcmp(line, "html-header-file") == 0)
 				http_set_header(p, 1);
-			else if(strcmp(line, "html-trailer-file") == 0)
+			else if (strcmp(line, "html-trailer-file") == 0)
 				http_set_header(p, 0);
-			else if(strcmp(line, "preprocess-cache") == 0)
+			else if (strcmp(line, "preprocess-cache") == 0)
 				must_strtol(p, &process_cache);
 			else
 				printf("Unknown config '%s'\n", line);
@@ -190,18 +220,21 @@ int read_config(char *fname)
 
 		fclose(fp);
 	}
-	else if(errno != ENOENT || strcmp(fname, GOPHER_CONFIG)) {
+	else if (errno != ENOENT || strcmp(fname, GOPHER_CONFIG))
+	{
 		syslog(LOG_WARNING, "%s: %m", fname);
 		return 1;
 	}
 
 	// Make sure hostname is set to something
 	// Make sure it is malloced
-	if(hostname == NULL) {
+	if (hostname == NULL)
+	{
 #ifdef GOPHER_HOST
 		hostname = must_strdup(GOPHER_HOST);
 #else
-		if(gethostname(line, sizeof(line) - 1)) {
+		if (gethostname(line, sizeof(line) - 1))
+		{
 			puts("Warning: setting hostname to localhost.\n"
 				 "This is probably not what you want.");
 			strcpy(line, "localhost");
@@ -211,15 +244,21 @@ int read_config(char *fname)
 	}
 
 	// Default'em
-	if(root_dir == NULL) root_dir = must_strdup(GOPHER_ROOT);
-	if(logfile == NULL)  logfile  = must_strdup(GOPHER_LOGFILE);
-	if(pidfile == NULL)  pidfile  = must_strdup(GOPHER_PIDFILE);
-	if(tmpdir == NULL) {
-		if(!(tmpdir = getenv("TMPDIR"))) tmpdir = "/tmp";
+	if (root_dir == NULL)
+		root_dir = must_strdup(GOPHER_ROOT);
+	if (logfile == NULL)
+		logfile = must_strdup(GOPHER_LOGFILE);
+	if (pidfile == NULL)
+		pidfile = must_strdup(GOPHER_PIDFILE);
+	if (tmpdir == NULL)
+	{
+		if (!(tmpdir = getenv("TMPDIR")))
+			tmpdir = "/tmp";
 		tmpdir = must_strdup(tmpdir);
 	}
 
-	if(strlen(root_dir) >= PATH_MAX) {
+	if (strlen(root_dir) >= PATH_MAX)
+	{
 		printf("Root directory too long\n");
 		exit(1);
 	}

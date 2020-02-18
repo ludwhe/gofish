@@ -100,3 +100,7 @@ You can contact me about problems/suggestions/donations.
 
   Sean MacLennan
   headgopher@seanm.ca
+
+## Authors
+
+Sean MacLennan

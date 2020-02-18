@@ -13,7 +13,7 @@
  * for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this project; see the file COPYING.  If not, write to
+ * along with GoFish; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
@@ -24,12 +24,11 @@
 
 #include "gofish.h"
 
-
-struct mime {
+struct mime
+{
 	char *ext;
 	char *mime;
 };
-
 
 static char *mime_file = "/etc/mime.types";
 static int mime_set = 0;
@@ -37,13 +36,11 @@ static int mime_set = 0;
 static struct mime *mimes = NULL;
 static int n_mimes = 0;
 
-
 void set_mime_file(char *fname)
 {
 	mime_file = strdup(fname);
 	mime_set = 1;
 }
-
 
 char *mime_find(char *fname)
 {
@@ -51,17 +48,17 @@ char *mime_find(char *fname)
 	struct mime *m;
 	int i;
 
-	if((ext = strrchr(fname, '.'))) {
+	if ((ext = strrchr(fname, '.')))
+	{
 		++ext;
 
-		for(m = mimes, i = 0; i < n_mimes; ++i, ++m)
-			if(strcmp(m->ext, ext) == 0)
+		for (m = mimes, i = 0; i < n_mimes; ++i, ++m)
+			if (strcmp(m->ext, ext) == 0)
 				return m->mime;
 	}
 
 	return NULL;
 }
-
 
 static int add_mime(char *mime, char *ext)
 {
@@ -69,11 +66,12 @@ static int add_mime(char *mime, char *ext)
 	int i;
 
 	// See if extension already exists
-	for(m = mimes, i = 0; i < n_mimes; ++i, ++m)
-		if(strcmp(m->ext, ext) == 0)
+	for (m = mimes, i = 0; i < n_mimes; ++i, ++m)
+		if (strcmp(m->ext, ext) == 0)
 			return 1;
 
-	if(!(mimes = realloc(mimes, (n_mimes + 1) * sizeof(struct mime)))) {
+	if (!(mimes = realloc(mimes, (n_mimes + 1) * sizeof(struct mime))))
+	{
 		printf("Out of memory\n");
 		exit(1);
 	}
@@ -82,36 +80,47 @@ static int add_mime(char *mime, char *ext)
 	++n_mimes;
 
 	m->mime = must_strdup(mime);
-	m->ext  = must_strdup(ext);
+	m->ext = must_strdup(ext);
 
 	return 0;
 }
-
 
 static int read_mime_file(char *fname)
 {
 	FILE *fp;
 	char line[160], *p, *e;
 
-	if((fp = fopen(fname, "r")) == NULL) {
-		if(mime_set) perror(fname);
+	if ((fp = fopen(fname, "r")) == NULL)
+	{
+		if (mime_set)
+			perror(fname);
 		return 1;
 	}
 
-	while(fgets(line, sizeof(line), fp)) {
-		if(*line == '#' || isspace((int)*line)) continue; // comment
-		if((p = strchr(line, '\n'))) *p = '\0';
+	while (fgets(line, sizeof(line), fp))
+	{
+		if (*line == '#' || isspace((int)*line))
+			continue; // comment
+		if ((p = strchr(line, '\n')))
+			*p = '\0';
 
-		for(p = line; *p && !isspace((int)*p); ++p) ;
-		if(*p == '\0') continue;
+		for (p = line; *p && !isspace((int)*p); ++p)
+			;
+		if (*p == '\0')
+			continue;
 		*p++ = '\0';
-		while(isspace((int)*p)) ++p;
+		while (isspace((int)*p))
+			++p;
 
-		for(e = p; *e; p = e) {
-			while(*e && !isspace((int)*e)) ++e;
-			if(*e) {
+		for (e = p; *e; p = e)
+		{
+			while (*e && !isspace((int)*e))
+				++e;
+			if (*e)
+			{
 				*e++ = '\0';
-				while(isspace((int)*e)) ++e;
+				while (isspace((int)*e))
+					++e;
 			}
 
 			add_mime(line, p);
@@ -123,42 +132,41 @@ static int read_mime_file(char *fname)
 	return 0;
 }
 
-
 static struct mime default_mimes[] = {
-	{ "gif",  "image/gif"  },
-	{ "jpg",  "image/jpeg" },
-	{ "png",  "image/png"  },
-	{ "jpeg", "image/jpeg" },
-	{ "pdf",  "application/pdf" },
-	{ "html", "text/html" },
-	{ "htm",  "text/html" },
-	{ "txt",  "text/plain" },
-	{ "ico",  "text/plain" },
-	{ 0, 0 },
+	{"gif", "image/gif"},
+	{"jpg", "image/jpeg"},
+	{"png", "image/png"},
+	{"jpeg", "image/jpeg"},
+	{"pdf", "application/pdf"},
+	{"html", "text/html"},
+	{"htm", "text/html"},
+	{"txt", "text/plain"},
+	{"ico", "text/plain"},
+	{0, 0},
 };
-
 
 void mime_init()
 {
 	struct mime *m;
 
-	if(mime_file)
+	if (mime_file)
 		read_mime_file(mime_file);
 
-	if(mime_set) free(mime_file);
+	if (mime_set)
+		free(mime_file);
 
 	// Add the defaults if not already set
-	for(m = default_mimes; m->ext; ++m)
+	for (m = default_mimes; m->ext; ++m)
 		add_mime(m->mime, m->ext);
 }
-
 
 void mime_cleanup()
 {
 	struct mime *m;
 	int i;
 
-	for(m = mimes, i = 0; i < n_mimes; ++i, ++m) {
+	for (m = mimes, i = 0; i < n_mimes; ++i, ++m)
+	{
 		free(m->mime);
 		free(m->ext);
 	}

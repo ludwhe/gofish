@@ -1,6 +1,11 @@
 TODO
 ----
 
+- finish removing autoconf
+- change default document root depending on system
+  - /srv/gopher for GNU/Linux
+  - /var/something or /usr/something for the BSDs
+
 - /new and /new/ as different entries
 
 - more configuration

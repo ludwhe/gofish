@@ -1,12 +1,8 @@
-version.h
 config.h
-Makefile
 .gopher+
 config.cache
 config.log
 config.status
-stamp-h
-stamp-h1
 .deps
 gofish
 mkcache

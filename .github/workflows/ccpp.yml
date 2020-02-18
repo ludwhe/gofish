@@ -6,7 +6,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v2
     - name: configure
@@ -15,3 +15,9 @@ jobs:
       run: make
     - name: make check
       run: make check
+    - name: make dist
+      run: make dist
+    - uses: actions/upload-artifact@v1
+      with:
+        name: gofish-1.0.tar.gz
+        path: ./gofish-1.0.tar.gz

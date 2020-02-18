@@ -13,7 +13,7 @@
  * for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with XEmacs; see the file COPYING.  If not, write to
+ * along with GoFish; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
@@ -38,33 +38,31 @@
 // Better binary mime handling
 // Better image mime handling
 
-#define MAX_SERVER_STRING	600
+#define MAX_SERVER_STRING 600
 static char *server_str;
 
 static char *mime_html = "text/html; charset=iso-8859-1";
 
-
-static char *html_header=
-			"<!DOCTYPE HTML PUBLIC " \
-			"\"-//W3C//DTD HTML 4.01 Transitional//EN\">\n" \
-			"<html lang=\"en\">\n" \
-			"<head>\n<title>GoFish gopher to http gateway.</title>\n" \
-			"<style type=\"text/css\">\n" \
-			"<!--\nBODY { margin: 1em 15%; }\n-->\n</style>\n" \
-			"</head>\n" \
+static char *html_header =
+	"<!DOCTYPE HTML PUBLIC "
+	"\"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
+	"<html lang=\"en\">\n"
+	"<head>\n<title>GoFish gopher to http gateway.</title>\n"
+	"<style type=\"text/css\">\n"
+	"<!--\nBODY { margin: 1em 15%; }\n-->\n</style>\n"
+	"</head>\n"
 	"<body>\n<p><pre>\n";
 static int html_set_header = 0;
 
-static char *html_trailer = "</pre>\n<hr>\n<p><small>" \
-				  	 "<a href=\"http://gofish.sourceforge.net/\">" \
-			         "GoFish " GOFISH_VERSION \
-			  	     "</a> gopher to http gateway.</small>\n" \
-	"</body>\n</html>\n";
+static char *html_trailer = "</pre>\n<hr>\n<p><small>"
+							"<a href=\"http://gofish.sourceforge.net/\">"
+							"GoFish " GOFISH_VERSION
+							"</a> gopher to http gateway.</small>\n"
+							"</body>\n</html>\n";
 static int html_set_trailer = 0;
 
-#define HTML_INDEX_FILE	"index.html"
-#define HTML_INDEX_TYPE	mime_html
-
+#define HTML_INDEX_FILE "index.html"
+#define HTML_INDEX_TYPE mime_html
 
 extern int smart_open(char *name, char *type);
 
@@ -81,24 +79,24 @@ inline int write_out(int fd, char *buf, int len)
 	return WRITE(fd, buf, len);
 }
 
-
 inline int write_str(int fd, char *str)
 {
 	return write_out(fd, str, strlen(str));
 }
-
 
 static void unquote(char *str)
 {
 	char *p, quote[3], *e;
 	int n;
 
-	for(p = str; (p = strchr(p, '%')); ) {
+	for (p = str; (p = strchr(p, '%'));)
+	{
 		quote[0] = *(p + 1);
 		quote[1] = *(p + 2);
 		quote[2] = '\0';
 		n = strtol(quote, &e, 16);
-		if(e == (quote + 2)) {
+		if (e == (quote + 2))
+		{
 			*p++ = (char)n;
 			memmove(p, p + 2, strlen(p + 2) + 1);
 		}
@@ -107,19 +105,17 @@ static void unquote(char *str)
 	}
 }
 
-
 static char *msg_400 =
-"Your browser sent a request that this server could not understand.";
+	"Your browser sent a request that this server could not understand.";
 
 static char *msg_404 =
-"The requested URL was not found on this server.";
+	"The requested URL was not found on this server.";
 
 static char *msg_414 =
-"The requested URL was too large.";
+	"The requested URL was too large.";
 
 static char *msg_500 =
-"An internal server error occurred. Try again later.";
-
+	"An internal server error occurred. Try again later.";
 
 /* This is a very specialized build_response just for errors.
    The request field is for the 301 errors.
@@ -129,14 +125,16 @@ static int http_error1(struct connection *conn, int status, char *request)
 	char str[MAX_LINE + MAX_LINE + MAX_SERVER_STRING + 512];
 	char *title, *p, *msg;
 
-	switch(status) {
+	switch (status)
+	{
 	case 301:
 		// Be nice and give the moved address.
 		title = "301 Moved Permanently";
 		sprintf(str,
 				"The document has moved <a href=\"/%s/\">here</a>.",
 				request);
-		if((msg = strdup(str)) == NULL) {
+		if ((msg = strdup(str)) == NULL)
+		{
 			syslog(LOG_WARNING, "http_error: Out of memory.");
 			close_connection(conn, status);
 			return 1;
@@ -175,7 +173,8 @@ static int http_error1(struct connection *conn, int status, char *request)
 			"Content-Type: text/html\r\n",
 			title, server_str);
 
-	if(status == 301) {
+	if (status == 301)
+	{
 		// we must add the *real* location
 		p = str + strlen(str);
 		sprintf(p, "Location: /%s/\r\n", request);
@@ -194,11 +193,14 @@ static int http_error1(struct connection *conn, int status, char *request)
 			"</body></html>\r\n",
 			title, title, msg);
 
-	if(status == 301) free(msg);
+	if (status == 301)
+		free(msg);
 
-	if((conn->http_header = strdup(str)) == NULL) {
+	if ((conn->http_header = strdup(str)) == NULL)
+	{
 		syslog(LOG_WARNING, "http_error: Out of memory.");
-		if(status == 302) free(msg);
+		if (status == 302)
+			free(msg);
 		close_connection(conn, status);
 		return 1;
 	}
@@ -206,7 +208,7 @@ static int http_error1(struct connection *conn, int status, char *request)
 	conn->status = status;
 
 	conn->iovs[0].iov_base = conn->http_header;
-	conn->iovs[0].iov_len  = strlen(conn->http_header);
+	conn->iovs[0].iov_len = strlen(conn->http_header);
 	conn->n_iovs = 1;
 
 	set_writeable(conn);
@@ -214,13 +216,11 @@ static int http_error1(struct connection *conn, int status, char *request)
 	return 0;
 }
 
-
 /* For all but 301 errors */
 int http_error(struct connection *conn, int status)
 {
 	return http_error1(conn, status, "bogus");
 }
-
 
 static int http_build_response(struct connection *conn, char *type)
 {
@@ -232,17 +232,21 @@ static int http_build_response(struct connection *conn, char *type)
 	// SAM We do not support persistant connections
 	strcat(str, "Connection: close\r\n");
 	p = str;
-	if(type) {
+	if (type)
+	{
 		p += strlen(p);
 		sprintf(p, "Content-Type: %s\r\n", type);
 	}
 	p += strlen(p);
 	len = conn->len;
-	if(conn->html_header) len += strlen(conn->html_header);
-	if(conn->html_trailer) len += strlen(conn->html_trailer);
+	if (conn->html_header)
+		len += strlen(conn->html_header);
+	if (conn->html_trailer)
+		len += strlen(conn->html_trailer);
 	sprintf(p, "Content-Length: %d\r\n\r\n", len);
 
-	if((conn->http_header = strdup(str)) == NULL) {
+	if ((conn->http_header = strdup(str)) == NULL)
+	{
 		// Just closing the connection is the best we can do
 		syslog(LOG_WARNING, "Low on memory.");
 		close_connection(conn, 500);
@@ -254,33 +258,52 @@ static int http_build_response(struct connection *conn, char *type)
 	return 0;
 }
 
-
 static int http_dir_line(int out, char *line)
 {
 	char *desc, *url, *host, *port;
 	char *p, *icon;
 	char buf[200];
 
-	for(desc = p = line + 1; *p && *p != '\t'; ++p) ;
+	for (desc = p = line + 1; *p && *p != '\t'; ++p)
+		;
 	*p++ = '\0';
-	for(url = p; *p && *p != '\t'; ++p) ;
+	for (url = p; *p && *p != '\t'; ++p)
+		;
 	*p++ = '\0';
-	for(host = p; *p && *p != '\t'; ++p) ;
+	for (host = p; *p && *p != '\t'; ++p)
+		;
 	*p++ = '\0';
-	for(port = p; *p && *p != '\t'; ++p) ;
+	for (port = p; *p && *p != '\t'; ++p)
+		;
 	*p++ = '\0';
 
-	if(*line == 'i') {
+	if (*line == 'i')
+	{
 		write_str(out, line + 1);
 		write_str(out, "<br>\n");
-	} else {
-		switch(*line) {
-		case '0': icon = "text"; break;
-		case '1': icon = "menu"; break;
-		case '9': icon = "binary"; break;
-		case 'h': icon = "html"; break;
-		case 'I': icon = "image"; break;
-		default:  icon = "unknown"; break;
+	}
+	else
+	{
+		switch (*line)
+		{
+		case '0':
+			icon = "text";
+			break;
+		case '1':
+			icon = "menu";
+			break;
+		case '9':
+			icon = "binary";
+			break;
+		case 'h':
+			icon = "html";
+			break;
+		case 'I':
+			icon = "image";
+			break;
+		default:
+			icon = "unknown";
+			break;
 		}
 
 		sprintf(buf,
@@ -289,13 +312,17 @@ static int http_dir_line(int out, char *line)
 				icon, icon_width, icon_height, icon);
 		write_str(out, buf);
 
-		if(strcmp(host, hostname) && strcmp(host, "localhost")) {
-			if(strcmp(port, "70") == 0)
+		if (strcmp(host, hostname) && strcmp(host, "localhost"))
+		{
+			if (strcmp(port, "70") == 0)
 				sprintf(buf, "gopher://%.40s/", host);
 			else
 				sprintf(buf, "gopher://%.40s:%s/", host, port);
-			if(*line == '1' && (strcmp(url, "/") == 0 || !*url)) {
-			} else {
+			if (*line == '1' && (strcmp(url, "/") == 0 || !*url))
+			{
+			}
+			else
+			{
 				p = buf + strlen(buf);
 				sprintf(p, "%c%.80s", *line, url);
 			}
@@ -305,7 +332,9 @@ static int http_dir_line(int out, char *line)
 			write_str(out, "\">");
 			write_str(out, buf);
 			write_str(out, "</a><br>\n");
-		} else {
+		}
+		else
+		{
 			write_str(out, "<a href=\"/");
 #ifdef STRICT_GOPHER
 			write_out(out, line, 1);
@@ -322,8 +351,7 @@ static int http_dir_line(int out, char *line)
 	return 0;
 }
 
-
-#define BUFSIZE		2048
+#define BUFSIZE 2048
 
 // return the outfd or -1 for error
 static int http_directory(struct connection *conn, int fd, char *dir)
@@ -334,22 +362,26 @@ static int http_directory(struct connection *conn, int fd, char *dir)
 	char *buf, *p, *s;
 	int n, len, left;
 
-
 	sprintf(outname, ".gofish-XXXXXX");
-	if((out = mkstemp(outname)) == -1) {
+	if ((out = mkstemp(outname)) == -1)
+	{
 		syslog(LOG_ERR, "%s: %m", outname);
 		return -1;
 	}
-	if((conn->outname = strdup(outname)) == NULL) {
+	if ((conn->outname = strdup(outname)) == NULL)
+	{
 		syslog(LOG_ERR, "Out of memory");
 		return -1;
 	}
 
-	if(*dir == '/') ++dir;
-	if(strncmp(dir, "1/", 2) == 0) dir += 2;
+	if (*dir == '/')
+		++dir;
+	if (strncmp(dir, "1/", 2) == 0)
+		dir += 2;
 	sprintf(url, "http://%.80s:%d/%.80s", hostname, port, dir);
 	p = url + strlen(url);
-	if(*(p - 1) != '/') strcpy(p, "/");
+	if (*(p - 1) != '/')
+		strcpy(p, "/");
 
 	sprintf(buffer,
 			"<!DOCTYPE HTML PUBLIC "
@@ -365,19 +397,22 @@ static int http_directory(struct connection *conn, int fd, char *dir)
 			url, url);
 	write_str(out, buffer);
 
-
 	buf = buffer;
 	len = BUFSIZE;
-	while((n = READ(fd, buf, len)) > 0) {
+	while ((n = READ(fd, buf, len)) > 0)
+	{
 		buf[n] = '\0';
-		for(s = buffer; (p = strchr(s, '\n')); s = p) {
-			if(p > buffer && *(p - 1) == '\r') *(p - 1) = '\0';
+		for (s = buffer; (p = strchr(s, '\n')); s = p)
+		{
+			if (p > buffer && *(p - 1) == '\r')
+				*(p - 1) = '\0';
 			*p++ = '\0';
 
 			http_dir_line(out, s); // do it
 		}
 
-		if(s == buffer) {
+		if (s == buffer)
+		{
 			syslog(LOG_WARNING, "%s: line too long", dir);
 			return -1;
 		}
@@ -391,29 +426,32 @@ static int http_directory(struct connection *conn, int fd, char *dir)
 		len = BUFSIZE - left;
 	}
 
-	if(n < 0) {
+	if (n < 0)
+	{
 		syslog(LOG_ERR, "%s: read error", dir);
 		return -1;
 	}
 
 	write_str(out, "<hr>\n"
-			  "<small>"
-			  "<a href=\"http://gofish.sourceforge.net/\">"
-			  "GoFish " GOFISH_VERSION
-			  "</a> gopher to http gateway.</small>\n"
-			  "</body>\n</html>\n");
+				   "<small>"
+				   "<a href=\"http://gofish.sourceforge.net/\">"
+				   "GoFish " GOFISH_VERSION
+				   "</a> gopher to http gateway.</small>\n"
+				   "</body>\n</html>\n");
 
 	return out;
 }
 
-struct mark {
+struct mark
+{
 	char *pos;
 	char data;
 };
 
-#define MSAVE(m, p) (m)->pos = (p); (m)->data = *(p)
+#define MSAVE(m, p) \
+	(m)->pos = (p); \
+	(m)->data = *(p)
 #define MRESTORE(m) *(m)->pos = (m)->data
-
 
 int http_get(struct connection *conn)
 {
@@ -427,79 +465,103 @@ int http_get(struct connection *conn)
 
 	// This works for both GET and HEAD
 	request += 4;
-	while(isspace((int)*request)) ++request;
+	while (isspace((int)*request))
+		++request;
 
-	if((e = strstr(request, "HTTP/")) == NULL)
+	if ((e = strstr(request, "HTTP/")) == NULL)
 		// probably a local lynx request
 		return http_error(conn, 400);
 
-	while(*(e - 1) == ' ') --e;
+	while (*(e - 1) == ' ')
+		--e;
 	MSAVE(&save, e);
 	*e++ = '\0';
 
-	if(*request == '/') ++request;
+	if (*request == '/')
+		++request;
 
 	unquote(request);
 
-	if(combined_log) {
+	if (combined_log)
+	{
 		// Save these up front for logging
 		conn->referer = strstr(e, "Referer:");
 		conn->user_agent = strstr(e, "User-Agent:");
 	}
 
-	if(is_gopher) {
-		if((fd = smart_open(request, &type)) >= 0) {
+	if (is_gopher)
+	{
+		if ((fd = smart_open(request, &type)) >= 0)
+		{
 			// valid gopher request
-			if(verbose) printf("HTTP Gopher request '%s'\n", request);
- 			switch(type) {
+			if (verbose)
+				printf("HTTP Gopher request '%s'\n", request);
+			switch (type)
+			{
 			case '1':
 				new = http_directory(conn, fd, request);
 				close(fd);
 				fd = new;
-				if(fd < 0) {
+				if (fd < 0)
+				{
 					MRESTORE(&save);
 					return http_error(conn, 500);
 				}
 				mime = mime_html;
 				break;
 			case '0':
-				if(htmlizer) {
-					conn->html_header  = html_header;
+				if (htmlizer)
+				{
+					conn->html_header = html_header;
 					conn->html_trailer = html_trailer;
 					mime = mime_html;
-				} else
+				}
+				else
 					mime = "text/plain";
 				break;
 			case '4':
 			case '5':
 			case '6':
 			case '9':
-				if((mime = mime_find(request)) == NULL)
+				if ((mime = mime_find(request)) == NULL)
 					mime = "application/octet-stream";
 				break;
-			case 'g': mime = "image/gif"; break;
-			case 'h': mime = mime_html; break;
-			case 'I': mime = mime_find(request); break;
+			case 'g':
+				mime = "image/gif";
+				break;
+			case 'h':
+				mime = mime_html;
+				break;
+			case 'I':
+				mime = mime_find(request);
+				break;
 			default:
 				// Safe default - let the user handle it
 				mime = "application/octet-stream";
 				syslog(LOG_WARNING, "Bad file type %c", type);
 				break;
 			}
-		} else {
-			if(verbose) printf("HTTP Gopher invalid '%s'\n", request);
+		}
+		else
+		{
+			if (verbose)
+				printf("HTTP Gopher invalid '%s'\n", request);
 			syslog(LOG_WARNING, "%s: %m", request);
 			MRESTORE(&save);
 			return http_error(conn, 404);
 		}
-	} else {// real http request
+	}
+	else
+	{ // real http request
 #ifdef CGI
 		char *p;
 
-		if((p = strstr(request, "cgi-bin/"))) {
+		if ((p = strstr(request, "cgi-bin/")))
+		{
 			int rc;
 
-			if((rc = go_chdir("/cgi-bin"))) {
+			if ((rc = go_chdir("/cgi-bin")))
+			{
 				printf("Chdir to cgi-bin failed!\n");
 				MRESTORE(&save);
 				return http_error(conn, 404);
@@ -509,18 +571,23 @@ int http_get(struct connection *conn)
 			return rc;
 		}
 #endif
-		if(virtual_hosts) {
+		if (virtual_hosts)
+		{
 			char *host;
 			int rc;
 
-			if((host = strstr(e, "Host:"))) {
+			if ((host = strstr(e, "Host:")))
+			{
 				// isolate the host - ignore the port (if any)
-				for(host += 5; isspace((int)*host); ++host) ;
-				for(e = host; *e && !isspace((int)*e) && *e != ':'; ++e) ;
+				for (host += 5; isspace((int)*host); ++host)
+					;
+				for (e = host; *e && !isspace((int)*e) && *e != ':'; ++e)
+					;
 				*e = '\0';
 			}
 
-			if(!host || !*host) {
+			if (!host || !*host)
+			{
 				syslog(LOG_WARNING, "Request with no host '%s'", request);
 				MRESTORE(&save);
 				return http_error(conn, 403);
@@ -536,23 +603,29 @@ int http_get(struct connection *conn)
 			// SAM Cache current?
 			rc = go_chdir(host);
 
-			if(rc) {
+			if (rc)
+			{
 				syslog(LOG_WARNING, "host '%s': %m", host);
 				MRESTORE(&save);
 				return http_error(conn, 404);
 			}
 
-			if(verbose) printf("Http request %s '%s'\n", host + 1, request);
+			if (verbose)
+				printf("Http request %s '%s'\n", host + 1, request);
 		}
-		else if(verbose) printf("Http request '%s'\n", request);
+		else if (verbose)
+			printf("Http request '%s'\n", request);
 
-		if(*request) {
-			if(isdir(request)) {
+		if (*request)
+		{
+			if (isdir(request))
+			{
 				char dirname[MAX_LINE + 20], *p;
 
 				strcpy(dirname, request);
 				p = dirname + strlen(dirname);
-				if(*(p - 1) != '/') {
+				if (*(p - 1) != '/')
+				{
 					// We must send back a 301 response or relative
 					// URLs will not work
 					int rc = http_error1(conn, 301, request);
@@ -562,17 +635,22 @@ int http_get(struct connection *conn)
 				strcpy(p, HTML_INDEX_FILE);
 				fd = open(dirname, O_RDONLY);
 				mime = HTML_INDEX_TYPE;
-			} else {
+			}
+			else
+			{
 				fd = open(request, O_RDONLY);
 				mime = mime_find(request);
 			}
-		} else {
+		}
+		else
+		{
 			fd = open(HTML_INDEX_FILE, O_RDONLY);
 			mime = HTML_INDEX_TYPE;
 		}
 	}
 
-	if(fd < 0) {
+	if (fd < 0)
+	{
 		syslog(LOG_WARNING, "%s: %m", request);
 		MRESTORE(&save);
 		return http_error(conn, 404);
@@ -582,15 +660,17 @@ int http_get(struct connection *conn)
 
 	conn->len = lseek(fd, 0, SEEK_END);
 
-	if(http_build_response(conn, mime)) {
+	if (http_build_response(conn, mime))
+	{
 		syslog(LOG_WARNING, "Out of memory");
 		return -1;
 	}
 
 	conn->iovs[0].iov_base = conn->http_header;
-	conn->iovs[0].iov_len  = strlen(conn->http_header);
+	conn->iovs[0].iov_len = strlen(conn->http_header);
 
-	if(conn->http == HTTP_HEAD) {
+	if (conn->http == HTTP_HEAD)
+	{
 		// no body to send
 		close(fd);
 
@@ -606,24 +686,28 @@ int http_get(struct connection *conn)
 	close(fd); // done with this
 
 	// Zero length files will fail
-	if(conn->buf == NULL && conn->len) {
+	if (conn->buf == NULL && conn->len)
+	{
 		syslog(LOG_ERR, "mmap: %m");
 		return http_error(conn, 500);
 	}
 
-	if(conn->html_header) {
+	if (conn->html_header)
+	{
 		conn->iovs[1].iov_base = conn->html_header;
-		conn->iovs[1].iov_len  = strlen(conn->html_header);
+		conn->iovs[1].iov_len = strlen(conn->html_header);
 	}
 
-	if(conn->buf) {
+	if (conn->buf)
+	{
 		conn->iovs[2].iov_base = conn->buf;
-		conn->iovs[2].iov_len  = conn->len;
+		conn->iovs[2].iov_len = conn->len;
 	}
 
-	if(conn->html_trailer) {
+	if (conn->html_trailer)
+	{
 		conn->iovs[3].iov_base = conn->html_trailer;
-		conn->iovs[3].iov_len  = strlen(conn->html_trailer);
+		conn->iovs[3].iov_len = strlen(conn->html_trailer);
 	}
 
 	conn->len =
@@ -639,15 +723,14 @@ int http_get(struct connection *conn)
 	return 0;
 }
 
-
 static int isdir(char *name)
 {
 	struct stat sbuf;
 
-	if(stat(name, &sbuf) == -1) return 0;
+	if (stat(name, &sbuf) == -1)
+		return 0;
 	return S_ISDIR(sbuf.st_mode);
 }
-
 
 int http_init()
 {
@@ -658,7 +741,8 @@ int http_init()
 
 	sprintf(str, "Server: GoFish/%.8s (%.512s)\r\n", GOFISH_VERSION, uts.sysname);
 
-	if(!(server_str = strdup(str))) {
+	if (!(server_str = strdup(str)))
+	{
 		syslog(LOG_ERR, "http_init: Out of memory");
 		exit(1);
 	}
@@ -666,12 +750,11 @@ int http_init()
 	return 0;
 }
 
-
 void http_cleanup()
 {
-	if(server_str) free(server_str);
+	if (server_str)
+		free(server_str);
 }
-
 
 void http_set_header(char *fname, int header)
 {
@@ -680,30 +763,36 @@ void http_set_header(char *fname, int header)
 	int n;
 	struct stat sbuf;
 
-	if((fd = open(fname, O_RDONLY)) < 0 || fstat(fd, &sbuf)) {
+	if ((fd = open(fname, O_RDONLY)) < 0 || fstat(fd, &sbuf))
+	{
 		syslog(LOG_ERR, "Unable to open %s", fname);
 		exit(1);
 	}
 
 	msg = must_alloc(sbuf.st_size + 1);
-	if((n = read(fd, msg, sbuf.st_size)) != sbuf.st_size) {
+	if ((n = read(fd, msg, sbuf.st_size)) != sbuf.st_size)
+	{
 		syslog(LOG_ERR, "Unable to read %s: %d/%ld", fname, n, sbuf.st_size);
 		exit(1);
 	}
 
 	close(fd);
 
-	if(header) {
-		if(html_set_header) free(html_header);
+	if (header)
+	{
+		if (html_set_header)
+			free(html_header);
 		html_header = msg;
 		html_set_header = 1;
-	} else {
-		if(html_set_trailer) free(html_trailer);
+	}
+	else
+	{
+		if (html_set_trailer)
+			free(html_trailer);
 		html_trailer = msg;
 		html_set_trailer = 1;
 	}
 }
-
 
 /* added by folkert@vanheusden.com */
 /* This function takes away all the hassle when working
@@ -711,9 +800,9 @@ void http_set_header(char *fname, int header)
  */
 int READ(int handle, char *whereto, int len)
 {
-	int cnt=0;
+	int cnt = 0;
 
-	while(1)
+	while (1)
 	{
 		int rc;
 
@@ -742,16 +831,15 @@ int READ(int handle, char *whereto, int len)
 	return cnt;
 }
 
-
 /* added by folkert@vanheusden.com */
 /* this function takes away all the hassle when working
  * with write(). Blocking writes only.
  */
 int WRITE(int handle, char *whereto, int len)
 {
-	int cnt=0;
+	int cnt = 0;
 
-	while(len>0)
+	while (len > 0)
 	{
 		int rc;
 
@@ -780,21 +868,20 @@ int WRITE(int handle, char *whereto, int len)
 	return cnt;
 }
 
-
 // All directories are rooted
 int go_chdir(const char *path)
 {
 #ifdef NO_CHROOT
 	char fulldir[PATH_MAX + 1];
 
-	if(strlen(root_dir) + strlen(path) >= PATH_MAX) return ENAMETOOLONG;
+	if (strlen(root_dir) + strlen(path) >= PATH_MAX)
+		return ENAMETOOLONG;
 	sprintf(fulldir, "%s%s", root_dir, path);
 	return chdir(fulldir);
 #else
 	return chdir(path);
 #endif
 }
-
 
 #ifdef CGI
 int cgi(struct connection *conn, char *request)
@@ -803,7 +890,8 @@ int cgi(struct connection *conn, char *request)
 	pid_t child;
 
 	// Malloc it so we can mess with it as much as we want
-	if((request = strdup(request)) == NULL) {
+	if ((request = strdup(request)) == NULL)
+	{
 		printf("Out of memory\n"); // SAM
 		http_error(conn, 500);
 		return 1;
@@ -811,22 +899,28 @@ int cgi(struct connection *conn, char *request)
 
 	// Request has already been preprocessed
 	// We are pointing past cgi-bin/
-	if(verbose) printf("CGI Request '%s'\n", request); // SAM
+	if (verbose)
+		printf("CGI Request '%s'\n", request); // SAM
 
-	if((path = strchr(request, '/'))) {
+	if ((path = strchr(request, '/')))
+	{
 		*path++ = '\0';
 		p = path + strlen(path);
-		if(*p == '/') *p = '\0';
-	} else
+		if (*p == '/')
+			*p = '\0';
+	}
+	else
 		path = "";
 
-	if(*request == '\0') {
+	if (*request == '\0')
+	{
 		printf("NO REQUEST\n");
 		http_error(conn, 403);
 		return 0;
 	}
 
-	if((child = fork()) == 0) {
+	if ((child = fork()) == 0)
+	{
 		// child
 		char *envp[10]; // SAM
 		char env[1024], *p;
@@ -844,7 +938,8 @@ int cgi(struct connection *conn, char *request)
 		// viewcvs needs to see the /cgi-bin
 		sprintf(env, "SCRIPT_NAME=/cgi-bin/%s", request); // SAM added cgi-bin
 		envp[i++] = strdup(env);
-		if((p = strchr(path, '?'))) {
+		if ((p = strchr(path, '?')))
+		{
 			*p++ = '\0';
 			sprintf(env, "QUERY_STRING=%s", p);
 			envp[i++] = strdup(env);
@@ -863,12 +958,16 @@ int cgi(struct connection *conn, char *request)
 				request, path, server_str);
 		len = strlen(env);
 	again:
-		if((n = write(sock, env, len)) < 0) {
-			if(errno == EWOULDBLOCK) {
+		if ((n = write(sock, env, len)) < 0)
+		{
+			if (errno == EWOULDBLOCK)
+			{
 				// SAM
 				len -= n;
 				goto again;
-			} else {
+			}
+			else
+			{
 				// SAM
 				FILE *fp = fopen("/tmp/gofish.out", "a");
 				fprintf(fp, "write failed: %s\n", strerror(errno));
@@ -876,7 +975,8 @@ int cgi(struct connection *conn, char *request)
 			}
 		}
 
-		if(execle(request, NULL, envp) < 0) {
+		if (execle(request, NULL, envp) < 0)
+		{
 			// SAM
 			FILE *fp = fopen("/tmp/gofish.out", "a");
 			fprintf(fp, "exec failed: %s\n", strerror(errno));
@@ -897,7 +997,8 @@ int cgi(struct connection *conn, char *request)
 		exit(1);
 	}
 
-	if(child == -1) {
+	if (child == -1)
+	{
 		perror("fork"); // SAM
 		http_error(conn, 403);
 		return 0;
